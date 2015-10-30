@@ -1,0 +1,23 @@
+{
+  "name": "cbin",
+  "authors": [
+    "Dane Elwell <dane.elwell@gmail.com>"
+  ],
+  "description": "Client-side encrypted pastebinalike",
+  "main": "index.html",
+  "moduleType": [],
+  "license": "AGPL",
+  "homepage": "http://p.rig.gr/",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.5",
+    "highlightjs": "~8.8.0"
+  }
+}

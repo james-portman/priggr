@@ -1,0 +1,11 @@
+.container-fluid {
+    margin-top: 20px;
+}
+
+#paste {
+    font-family: Ubuntu Mono, monospace;
+}
+
+.cbin-title {
+    font-family: Bitter, sans-serif;
+}
