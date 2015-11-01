@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/satori/go.uuid"
 )
 
 // Global? Come at me, bro.
@@ -49,7 +50,11 @@ func realMain(c *cli.Context) {
 	}
 	defer db.Close()
 
-	db.AutoMigrate(Paste{})
+	if lvl == log.DebugLevel {
+		db.LogMode(true)
+	}
+
+	db.AutoMigrate(&Paste{})
 	log.Debug("Database init done")
 
 	r := gin.Default()
@@ -63,18 +68,24 @@ func realMain(c *cli.Context) {
 
 func storePaste(c *gin.Context) {
 	paste := Paste{}
-	err := c.Bind(paste)
+	err := c.Bind(&paste)
 	if err != nil {
 		c.JSON(400, gin.H{"message": "Could not marshal POST data"})
 		return
 	}
 
 	paste.Created = time.Now()
+	paste.PasteID = uuid.NewV4().String()
+
+	log.Debugf("Paste data: %+v", paste)
+
+	db.Save(&paste)
+	c.JSON(200, gin.H{"message": "ok", "id": paste.PasteID})
 }
 
 func getPaste(c *gin.Context) {
-	pasteid, ok := c.Get("pasteid")
-	if !ok || pasteid == "" {
+	pasteid := c.Param("pasteid")
+	if pasteid == "" {
 		c.JSON(400, gin.H{"message": "Paste ID not provided"})
 		return
 	}
@@ -120,4 +131,6 @@ func main() {
 	}
 
 	app.Action = realMain
+
+	app.Run(os.Args)
 }
