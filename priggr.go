@@ -24,12 +24,13 @@ func (f *LogFormatter) Format(entry *log.Entry) ([]byte, error) {
 }
 
 type Paste struct {
-	ID      int       `json:"-"`
-	PasteID string    `json:"paste_id" gorm:"column:paste_id" sql:"unique_index"`
-	Created time.Time `json:"created"`
-	Syntax  string    `json:"syntax"`
-	Paste   string    `json:"paste"`
-	Expires int       `json:"expires"`
+	ID              int    `json:"-"`
+	PasteID         string `json:"paste_id" gorm:"column:paste_id" sql:"unique_index"`
+	Created         int64  `json:"created"`
+	Syntax          string `json:"syntax"`
+	Paste           string `json:"paste"`
+	Expires         int64  `json:"expires"`
+	ExpireTimestamp int64  `json:"-"`
 }
 
 func realMain(c *cli.Context) {
@@ -74,9 +75,10 @@ func storePaste(c *gin.Context) {
 		return
 	}
 
-	paste.Created = time.Now()
+	paste.Created = time.Now().Unix()
 	paste.PasteID = uuid.NewV4().String()
 
+	paste.ExpireTimestamp = time.Now().Add(time.Duration(paste.Expires) * time.Second).Unix()
 	log.Debugf("Paste data: %+v", paste)
 
 	db.Save(&paste)
@@ -100,6 +102,11 @@ func getPaste(c *gin.Context) {
 	}
 
 	c.JSON(200, paste)
+}
+
+func expirePastes() {
+	log.Debug("Expire timer fired, deleting expired pastes")
+	db.Where("expire_timestamp < ?", time.Now().Unix()).Delete(Paste{})
 }
 
 func main() {
@@ -131,6 +138,15 @@ func main() {
 	}
 
 	app.Action = realMain
+
+	expireTicker := time.NewTicker(time.Second * 60)
+
+	go func() {
+		for {
+			<-expireTicker.C
+			expirePastes()
+		}
+	}()
 
 	app.Run(os.Args)
 }
