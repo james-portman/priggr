@@ -4,7 +4,7 @@
 
   $(function() {
     var pasteid;
-    $.each(hljs.listLanguages(), function(i, lang) {
+    $.each(hljs.listLanguages().sort(), function(i, lang) {
       return $('#syntaxchoice').append("<option>" + lang + "</option>");
     });
     $('body').on('click', '#submitpaste', doPaste);

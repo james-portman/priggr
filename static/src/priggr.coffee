@@ -1,5 +1,5 @@
 $ ->
-    $.each hljs.listLanguages(), (i, lang) ->
+    $.each hljs.listLanguages().sort(), (i, lang) ->
         $('#syntaxchoice').append("<option>#{lang}</option>")
 
     $('body').on('click', '#submitpaste', doPaste)
@@ -57,7 +57,6 @@ doPaste = (event) ->
             window.location.assign("?#{res.responseJSON['id']}")
         else
             displayAlert("Error posting request: #{res.responseJSON['message']}")
-
 
 displayAlert = (msg) ->
     $('#pasteError').html("")
