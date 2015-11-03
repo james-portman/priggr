@@ -11,7 +11,8 @@ $ ->
 
 getPaste = (pasteid) ->
     console.log("in getPaste with ID #{pasteid}")
-    $.getJSON("/p/#{pasteid}").done (data) ->
+    $.getJSON("/p/#{pasteid}")
+    .done (data) ->
         cleandata = data['paste']
         cleandata = cleandata.replace(/>/g, '&gt;')
         cleandata = cleandata.replace(/</g, '&lt;')
@@ -25,6 +26,8 @@ getPaste = (pasteid) ->
         $('#syntaxchoice').val(data['syntax'])
         $('#expires').val(data['expires'])
         $('#paste').val(data['paste'])
+    .fail () ->
+        displayAlert("Paste not found.")
 
 doPaste = (event) ->
     console.log("in doPaste")
@@ -35,18 +38,28 @@ doPaste = (event) ->
     postBody["syntax"] = $('#syntaxchoice').val()
     postBody["expires"] = $('#expires').val()
 
+    if postBody["paste"] == ""
+        displayAlert("You didn't enter anything to paste?")
+        return
+
     $.ajax({
         type: "POST",
-        url: "http://localhost:8998/p",
+        url: "/p",
         contentType: "application/json",
         dataType: "json",
         data: JSON.stringify(postBody)
     }).complete (res, err) ->
         console.log(res)
         if not err == "" or err == "error"
-            console.log("Error posting request!")
+            displayAlert("Error posting request!")
             return
         if res.responseJSON['message'] == 'ok'
             window.location.assign("?#{res.responseJSON['id']}")
         else
-            console.log(res.responseJSON['message'])
+            displayAlert("Error posting request: #{res.responseJSON['message']}")
+
+
+displayAlert = (msg) ->
+    $('#pasteError').html("")
+    $('#pasteError').append(msg)
+    $('#pasteError').fadeIn(500).delay(3000).fadeOut(800)
