@@ -8,6 +8,7 @@ import (
 	// Loads of dependencies, and what?
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
@@ -29,8 +30,9 @@ type Paste struct {
 	Created         int64  `json:"created"`
 	Syntax          string `json:"syntax"`
 	Paste           string `json:"paste"`
-	Expires         int64  `json:"expires"`
+	Expires         int64  `json:"expires,string"`
 	ExpireTimestamp int64  `json:"-"`
+	Hits            int64  `json"-"`
 }
 
 func realMain(c *cli.Context) {
@@ -51,7 +53,7 @@ func realMain(c *cli.Context) {
 	}
 	defer db.Close()
 
-	if lvl == log.DebugLevel {
+	if c.Bool("sqldebug") {
 		db.LogMode(true)
 	}
 
@@ -59,19 +61,19 @@ func realMain(c *cli.Context) {
 	log.Debug("Database init done")
 
 	r := gin.Default()
+	r.Use(static.Serve("/", static.LocalFile("./static", true)))
 	r.GET("/p/:pasteid", getPaste)
 	r.POST("/p", storePaste)
 
 	log.Warningf("Priggr serving on %s:%d", c.String("bind"), c.Int("port"))
 	r.Run(fmt.Sprintf("%s:%d", c.String("bind"), c.Int("port")))
-
 }
 
 func storePaste(c *gin.Context) {
 	paste := Paste{}
 	err := c.Bind(&paste)
 	if err != nil {
-		c.JSON(400, gin.H{"message": "Could not marshal POST data"})
+		c.JSON(400, gin.H{"message": fmt.Sprintf("Could not marshal POST data: %s", err)})
 		return
 	}
 
@@ -101,6 +103,20 @@ func getPaste(c *gin.Context) {
 		return
 	}
 
+	paste.Hits++
+	db.Save(&paste)
+
+	if paste.Hits > 1 {
+		if paste.Expires == -2 {
+			// Burn after reading. The first hit will be the redirect after
+			// the paste is added to the system, so we trigger this on the
+			// second hit which should be when the recipient has read it.
+			defer func() {
+				db.Delete(&paste)
+			}()
+		}
+	}
+
 	c.JSON(200, paste)
 }
 
@@ -124,6 +140,10 @@ func main() {
 			Name:  "database, d",
 			Value: "/var/lib/prigger/prigger.db",
 			Usage: "Path to sqlite3 database",
+		},
+		cli.BoolFlag{
+			Name:  "sqldebug, s",
+			Usage: "Enables sql debugging only when loglevel is set to debug",
 		},
 		cli.StringFlag{
 			Name:  "bind, b",

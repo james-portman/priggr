@@ -6,6 +6,16 @@
     font-family: Ubuntu Mono, monospace;
 }
 
+pre code {
+    font-family: Ubuntu Mono, monospace;
+    font-size: 1.1em;
+}
+
+.hljs {
+    background: #fff;
+    margin-bottom: 10px;
+}
+
 .cbin-title {
     font-family: Bitter, sans-serif;
 }
