@@ -63,6 +63,7 @@ func realMain(c *cli.Context) {
 	r := gin.Default()
 	r.Use(static.Serve("/", static.LocalFile("./static", true)))
 	r.GET("/p/:pasteid", getPaste)
+	r.GET("/raw/:pasteid", getRawPaste)
 	r.POST("/p", storePaste)
 
 	log.Warningf("Priggr serving on %s:%d", c.String("bind"), c.Int("port"))
@@ -91,11 +92,11 @@ func storePaste(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "ok", "id": paste.PasteID})
 }
 
-func getPaste(c *gin.Context) {
+func dbFindPaste(c *gin.Context) (Paste, error) {
 	pasteid := c.Param("pasteid")
 	if pasteid == "" {
 		c.JSON(400, gin.H{"message": "Paste ID not provided"})
-		return
+		return Paste{}, fmt.Errorf("Paste ID not provided")
 	}
 
 	paste := Paste{}
@@ -104,7 +105,7 @@ func getPaste(c *gin.Context) {
 
 	if paste.Paste == "" {
 		c.JSON(404, gin.H{"message": "Paste not found"})
-		return
+		return Paste{}, fmt.Errorf("Paste not found")
 	}
 
 	paste.Hits++
@@ -121,6 +122,22 @@ func getPaste(c *gin.Context) {
 		}
 	}
 
+	return paste, nil
+}
+
+func getRawPaste(c *gin.Context) {
+	paste, err := dbFindPaste(c)
+	if err != nil {
+		return
+	}
+	c.String(200, paste.Paste)
+}
+
+func getPaste(c *gin.Context) {
+	paste, err := dbFindPaste(c)
+	if err != nil {
+		return
+	}
 	c.JSON(200, paste)
 }
 

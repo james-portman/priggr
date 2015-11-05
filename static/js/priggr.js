@@ -24,9 +24,11 @@
       cleandata = cleandata.replace(/</g, '&lt;');
       cleandata = cleandata.replace(/"/g, '&quot;');
       $('#pastewell').append("<pre><code class=\"" + data['syntax'] + "\">" + cleandata + "</code></pre>");
-      $('#pastewell').each(function(i, e) {
+      $('pre code').each(function(i, e) {
         return hljs.highlightBlock(e);
       });
+      $('#viewraw').attr("href", "/raw/" + pasteid);
+      $('#viewraw').show();
       $('#pastewell').show();
       $('#syntaxchoice').val(data['syntax']);
       $('#expires').val(data['expires']);

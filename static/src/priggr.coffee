@@ -19,8 +19,10 @@ getPaste = (pasteid) ->
         cleandata = cleandata.replace(/"/g, '&quot;')
 
         $('#pastewell').append("<pre><code class=\"#{data['syntax']}\">#{cleandata}</code></pre>")
-        $('#pastewell').each (i, e) ->
+        $('pre code').each (i, e) ->
             hljs.highlightBlock(e)
+        $('#viewraw').attr("href", "/raw/#{pasteid}")
+        $('#viewraw').show()
         $('#pastewell').show()
 
         $('#syntaxchoice').val(data['syntax'])
