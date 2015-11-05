@@ -80,7 +80,11 @@ func storePaste(c *gin.Context) {
 	paste.Created = time.Now().Unix()
 	paste.PasteID = uuid.NewV4().String()
 
-	paste.ExpireTimestamp = time.Now().Add(time.Duration(paste.Expires) * time.Second).Unix()
+	if paste.Expires > 0 {
+		paste.ExpireTimestamp = time.Now().Add(time.Duration(paste.Expires) * time.Second).Unix()
+	} else {
+		paste.ExpireTimestamp = 0
+	}
 	log.Debugf("Paste data: %+v", paste)
 
 	db.Save(&paste)
@@ -122,7 +126,7 @@ func getPaste(c *gin.Context) {
 
 func expirePastes() {
 	log.Debug("Expire timer fired, deleting expired pastes")
-	db.Where("expire_timestamp < ?", time.Now().Unix()).Delete(Paste{})
+	db.Where("expires > 0 AND expire_timestamp < ?", time.Now().Unix()).Delete(Paste{})
 }
 
 func main() {
